@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ControlAsistencia.App/ControlAsistencia.App.csproj" />
+  <Project Path="ControlAsistencia.Core/ControlAsistencia.Core.csproj" />
+  <Project Path="ControlAsistencia.Tests/ControlAsistencia.Tests.csproj" />
+</Solution>
