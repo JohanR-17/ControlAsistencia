@@ -36,5 +36,31 @@ namespace ControlAsistencia.Core
             using var stream = File.Create(rutaSalida);
             libro.Write(stream);
         }
-    }
+
+        public void ExportarNovedades (List<Inconsistencia> inconsistencia, string rutaSalida)
+        {
+            IWorkbook libro = new XSSFWorkbook();
+            ISheet hoja = libro.CreateSheet("Novedades");
+
+            IRow encabezado = hoja.CreateRow(0);
+            encabezado.CreateCell(0).SetCellValue("Empleado");
+            encabezado.CreateCell(1).SetCellValue("Fecha");
+            encabezado.CreateCell(2).SetCellValue("Tipo");
+            encabezado.CreateCell(3).SetCellValue("Detalle");
+
+            for (int i = 0; i < inconsistencia.Count; i++)
+            {
+                Inconsistencia inconsistencias = inconsistencia[i];
+                IRow fila = hoja.CreateRow(i + 1);
+
+                fila.CreateCell(0).SetCellValue(inconsistencias.Empleado);
+                fila.CreateCell(1).SetCellValue(inconsistencias.Fecha.ToString("yyyy-MM-dd"));
+                fila.CreateCell(2).SetCellValue(inconsistencias.Tipo.ToString());
+                fila.CreateCell(3).SetCellValue(inconsistencias.Detalle);
+            }
+
+            using var stream = File.Create(rutaSalida);
+            libro.Write(stream);
+        }
+}
 }
