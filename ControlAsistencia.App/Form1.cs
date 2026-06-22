@@ -2,13 +2,24 @@ using ControlAsistencia.Core;
 
 namespace ControlAsistencia.App
 {
+    /// <summary>
+    /// Ventana principal de la aplicacion de escritorio para procesar archivos de asistencia.
+    /// </summary>
     public partial class Form1 : Form
     {
+        /// <summary>
+        /// Inicializa los componentes visuales del formulario.
+        /// </summary>
         public Form1()
         {
             InitializeComponent();
         }
 
+        /// <summary>
+        /// Ejecuta el flujo de seleccion del archivo, procesamiento y exportacion de resultados.
+        /// </summary>
+        /// <param name="sender">Control que dispara el evento.</param>
+        /// <param name="e">Argumentos del evento de clic.</param>
         private void button1_Click(object sender, EventArgs e)
         {
             OpenFileDialog dialogoAbrir = new OpenFileDialog();
@@ -24,10 +35,12 @@ namespace ControlAsistencia.App
 
             try
             {
+                // Procesa el archivo seleccionado y acumula las novedades encontradas.
                 var inconsistencias = new List<Inconsistencia>();
                 var procesador = new ProcesadorAsistencia();
                 var registros = procesador.ProcesarArchivo(rutaEntrada, inconsistencias);
 
+                // Solicita al usuario la ubicacion del archivo de resumen.
                 SaveFileDialog dialogoGuardarResumen = new SaveFileDialog();
                 dialogoGuardarResumen.Filter = "Archivo de Excel (*.xlsx)|*.xlsx";
                 dialogoGuardarResumen.Title = "Guardar resumen de asistencia";
@@ -38,6 +51,7 @@ namespace ControlAsistencia.App
                     return;
                 }
 
+                // Solicita al usuario la ubicacion del archivo de novedades.
                 SaveFileDialog dialogoGuardarNovedades = new SaveFileDialog();
                 dialogoGuardarNovedades.Filter = "Archivo de Excel (*.xlsx)|*.xlsx";
                 dialogoGuardarNovedades.Title = "Guardar reporte de novedades";
@@ -48,15 +62,16 @@ namespace ControlAsistencia.App
                     return;
                 }
 
+                // Genera los archivos finales en formato Excel.
                 var exportador = new ExportadorExcel();
                 exportador.ExportarResumen(registros, dialogoGuardarResumen.FileName);
                 exportador.ExportarNovedades(inconsistencias, dialogoGuardarNovedades.FileName);
 
-                MessageBox.Show($"¡Listo! {registros.Count} registros procesados, {inconsistencias.Count} inconsistencias encontradas.");
+                MessageBox.Show($"Listo! {registros.Count} registros procesados, {inconsistencias.Count} inconsistencias encontradas.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ocurrió un error al procesar el archivo:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Ocurrio un error al procesar el archivo:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

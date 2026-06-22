@@ -3,8 +3,14 @@ using Xunit;
 
 namespace ControlAsistencia.Tests;
 
+/// <summary>
+/// Pruebas unitarias para validar los escenarios principales del calculo de asistencia.
+/// </summary>
 public class CalculadorAsistenciaTests
 {
+    /// <summary>
+    /// Verifica el caso ideal de cuatro marcaciones y descuento correcto del almuerzo.
+    /// </summary>
     [Fact]
     public void Procesar_ConCuatroMarcasNormales_CalculaNueveHoras()
     {
@@ -24,7 +30,7 @@ public class CalculadorAsistenciaTests
         var inconsistencias = new List<Inconsistencia>();
         var calculador = new CalculadorAsistencia();
 
-        // Act (ejecutar el código que se está probando)
+        // Act (ejecutar el codigo que se esta probando)
         RegistroAsistencia resultado = calculador.Procesar(dia, inconsistencias);
 
         // Assert (verificar que el resultado sea el esperado)
@@ -32,6 +38,9 @@ public class CalculadorAsistenciaTests
         Assert.Empty(inconsistencias);
     }
 
+    /// <summary>
+    /// Verifica que una marca repetida en menos de dos minutos se descarte como duplicada.
+    /// </summary>
     [Fact]
     public void Procesar_ConMarcaDuplicada_LaDescartaYCalculaNormal()
     {
@@ -42,7 +51,7 @@ public class CalculadorAsistenciaTests
             Marcas = new List<TimeOnly>
             {
                 new TimeOnly(6, 0, 0),
-                new TimeOnly(6, 0, 1),   // duplicado, 1 segundo después
+                new TimeOnly(6, 0, 1),   // duplicado, 1 segundo despues
                 new TimeOnly(12, 0, 0),
                 new TimeOnly(13, 0, 0),
                 new TimeOnly(16, 0, 0)
@@ -58,6 +67,10 @@ public class CalculadorAsistenciaTests
         Assert.Equal(TipoInconsistencia.MarcasDuplicadasDescartadas, inconsistencias[0].Tipo);
     }
 
+    /// <summary>
+    /// Verifica que con dos marcas se calcule la jornada sin descuento de almuerzo
+    /// y se deje registrada la inconsistencia.
+    /// </summary>
     [Fact]
     public void Procesar_ConDosMarcas_CalculaSinAlmuerzoYReportaInconsistencia()
     {
@@ -81,6 +94,9 @@ public class CalculadorAsistenciaTests
         Assert.Equal(TipoInconsistencia.MarcacionesIncompletas, inconsistencias[0].Tipo);
     }
 
+    /// <summary>
+    /// Verifica que una sola marcacion no produzca horas trabajadas.
+    /// </summary>
     [Fact]
     public void Procesar_ConUnaSolaMarca_NoCalculaHorasYReportaInconsistencia()
     {
@@ -100,6 +116,9 @@ public class CalculadorAsistenciaTests
         Assert.Equal(TipoInconsistencia.MarcacionesIncompletas, inconsistencias[0].Tipo);
     }
 
+    /// <summary>
+    /// Verifica que una cantidad de marcaciones fuera de lo esperado quede reportada.
+    /// </summary>
     [Fact]
     public void Procesar_ConSeisMarcasSeparadas_NoCalculaHorasYReportaCantidadDiferente()
     {
