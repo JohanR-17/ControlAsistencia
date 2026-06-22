@@ -17,6 +17,9 @@ namespace ControlAsistencia.Core
         {
             IWorkbook libro = new XSSFWorkbook();
             ISheet hoja = libro.CreateSheet("Resumen");
+            ICellStyle estiloEncabezado = CrearEstiloEncabezado(libro);
+            ICellStyle estiloTexto = CrearEstiloTexto(libro);
+            ICellStyle estiloNumero = CrearEstiloNumero(libro);
 
             // Encabezados solicitados en el requerimiento principal.
             IRow encabezado = hoja.CreateRow(0);
@@ -27,6 +30,7 @@ namespace ControlAsistencia.Core
             encabezado.CreateCell(4).SetCellValue("Fin Almuerzo");
             encabezado.CreateCell(5).SetCellValue("Salida");
             encabezado.CreateCell(6).SetCellValue("Horas Trabajadas");
+            AplicarEstiloFila(encabezado, estiloEncabezado);
 
             for (int i = 0; i < registros.Count; i++)
             {
@@ -40,8 +44,23 @@ namespace ControlAsistencia.Core
                 fila.CreateCell(3).SetCellValue(registro.InicioAlmuerzo?.ToString("HH:mm:ss") ?? "");
                 fila.CreateCell(4).SetCellValue(registro.FinAlmuerzo?.ToString("HH:mm:ss") ?? "");
                 fila.CreateCell(5).SetCellValue(registro.Salida?.ToString("HH:mm:ss") ?? "");
-                fila.CreateCell(6).SetCellValue(registro.HorasTrabajadas?.ToString("0.00") ?? "");
+
+                ICell celdaHoras = fila.CreateCell(6);
+                if (registro.HorasTrabajadas.HasValue)
+                {
+                    celdaHoras.SetCellValue(registro.HorasTrabajadas.Value);
+                    celdaHoras.CellStyle = estiloNumero;
+                }
+                else
+                {
+                    celdaHoras.SetCellValue("");
+                    celdaHoras.CellStyle = estiloNumero;
+                }
+
+                AplicarEstiloFila(fila, estiloTexto, exceptoColumna: 6);
             }
+
+            DarFormatoHoja(hoja, 7);
 
             using var stream = File.Create(rutaSalida);
             libro.Write(stream);
@@ -56,6 +75,8 @@ namespace ControlAsistencia.Core
         {
             IWorkbook libro = new XSSFWorkbook();
             ISheet hoja = libro.CreateSheet("Novedades");
+            ICellStyle estiloEncabezado = CrearEstiloEncabezado(libro);
+            ICellStyle estiloTexto = CrearEstiloTexto(libro);
 
             // Encabezados del reporte adicional de inconsistencias.
             IRow encabezado = hoja.CreateRow(0);
@@ -63,6 +84,7 @@ namespace ControlAsistencia.Core
             encabezado.CreateCell(1).SetCellValue("Fecha");
             encabezado.CreateCell(2).SetCellValue("Tipo");
             encabezado.CreateCell(3).SetCellValue("Detalle");
+            AplicarEstiloFila(encabezado, estiloEncabezado);
 
             for (int i = 0; i < inconsistencias.Count; i++)
             {
@@ -73,10 +95,114 @@ namespace ControlAsistencia.Core
                 fila.CreateCell(1).SetCellValue(inconsistencia.Fecha.ToString("yyyy-MM-dd"));
                 fila.CreateCell(2).SetCellValue(inconsistencia.Tipo.ToString());
                 fila.CreateCell(3).SetCellValue(inconsistencia.Detalle);
+                AplicarEstiloFila(fila, estiloTexto);
             }
+
+            DarFormatoHoja(hoja, 4);
 
             using var stream = File.Create(rutaSalida);
             libro.Write(stream);
+        }
+
+        /// <summary>
+        /// Crea el estilo visual de los encabezados de los reportes.
+        /// </summary>
+        /// <param name="libro">Libro Excel donde se aplicara el estilo.</param>
+        /// <returns>Estilo de encabezado con color suave y texto en negrita.</returns>
+        private ICellStyle CrearEstiloEncabezado(IWorkbook libro)
+        {
+            IFont fuente = libro.CreateFont();
+            fuente.IsBold = true;
+            fuente.Color = IndexedColors.White.Index;
+
+            ICellStyle estilo = libro.CreateCellStyle();
+            estilo.SetFont(fuente);
+            estilo.FillForegroundColor = IndexedColors.DarkTeal.Index;
+            estilo.FillPattern = FillPattern.SolidForeground;
+            estilo.Alignment = HorizontalAlignment.Center;
+            estilo.VerticalAlignment = VerticalAlignment.Center;
+            AplicarBordes(estilo);
+
+            return estilo;
+        }
+
+        /// <summary>
+        /// Crea el estilo base para celdas de texto.
+        /// </summary>
+        /// <param name="libro">Libro Excel donde se aplicara el estilo.</param>
+        /// <returns>Estilo con bordes y alineacion vertical centrada.</returns>
+        private ICellStyle CrearEstiloTexto(IWorkbook libro)
+        {
+            ICellStyle estilo = libro.CreateCellStyle();
+            estilo.VerticalAlignment = VerticalAlignment.Center;
+            AplicarBordes(estilo);
+
+            return estilo;
+        }
+
+        /// <summary>
+        /// Crea el estilo para valores numericos de horas trabajadas.
+        /// </summary>
+        /// <param name="libro">Libro Excel donde se aplicara el estilo.</param>
+        /// <returns>Estilo numerico con dos decimales.</returns>
+        private ICellStyle CrearEstiloNumero(IWorkbook libro)
+        {
+            ICellStyle estilo = CrearEstiloTexto(libro);
+            estilo.Alignment = HorizontalAlignment.Right;
+            estilo.DataFormat = libro.CreateDataFormat().GetFormat("0.00");
+
+            return estilo;
+        }
+
+        /// <summary>
+        /// Aplica bordes finos a una celda para mejorar la lectura del reporte.
+        /// </summary>
+        /// <param name="estilo">Estilo al que se agregaran los bordes.</param>
+        private void AplicarBordes(ICellStyle estilo)
+        {
+            estilo.BorderTop = BorderStyle.Thin;
+            estilo.BorderRight = BorderStyle.Thin;
+            estilo.BorderBottom = BorderStyle.Thin;
+            estilo.BorderLeft = BorderStyle.Thin;
+            estilo.TopBorderColor = IndexedColors.Grey40Percent.Index;
+            estilo.RightBorderColor = IndexedColors.Grey40Percent.Index;
+            estilo.BottomBorderColor = IndexedColors.Grey40Percent.Index;
+            estilo.LeftBorderColor = IndexedColors.Grey40Percent.Index;
+        }
+
+        /// <summary>
+        /// Aplica un estilo a todas las celdas creadas en una fila.
+        /// </summary>
+        /// <param name="fila">Fila que recibira el estilo.</param>
+        /// <param name="estilo">Estilo que se aplicara a las celdas.</param>
+        /// <param name="exceptoColumna">Columna opcional que conserva su propio estilo.</param>
+        private void AplicarEstiloFila(IRow fila, ICellStyle estilo, int? exceptoColumna = null)
+        {
+            for (int i = 0; i < fila.LastCellNum; i++)
+            {
+                if (exceptoColumna.HasValue && i == exceptoColumna.Value)
+                {
+                    continue;
+                }
+
+                fila.GetCell(i).CellStyle = estilo;
+            }
+        }
+
+        /// <summary>
+        /// Ajusta columnas y congela el encabezado para que el archivo sea mas legible.
+        /// </summary>
+        /// <param name="hoja">Hoja Excel que se va a ajustar.</param>
+        /// <param name="cantidadColumnas">Cantidad de columnas usadas en el reporte.</param>
+        private void DarFormatoHoja(ISheet hoja, int cantidadColumnas)
+        {
+            hoja.CreateFreezePane(0, 1);
+
+            for (int i = 0; i < cantidadColumnas; i++)
+            {
+                hoja.AutoSizeColumn(i);
+                hoja.SetColumnWidth(i, Math.Min(hoja.GetColumnWidth(i) + 800, 12000));
+            }
         }
     }
 }

@@ -7,6 +7,9 @@ namespace ControlAsistencia.App
     /// </summary>
     public partial class Form1 : Form
     {
+        private List<RegistroAsistencia> registrosProcesados = new();
+        private List<Inconsistencia> inconsistenciasProcesadas = new();
+
         /// <summary>
         /// Inicializa los componentes visuales del formulario.
         /// </summary>
@@ -16,11 +19,11 @@ namespace ControlAsistencia.App
         }
 
         /// <summary>
-        /// Ejecuta el flujo de seleccion del archivo, procesamiento y exportacion de resultados.
+        /// Selecciona el archivo Excel de entrada y procesa las marcaciones.
         /// </summary>
         /// <param name="sender">Control que dispara el evento.</param>
         /// <param name="e">Argumentos del evento de clic.</param>
-        private void button1_Click(object sender, EventArgs e)
+        private void btnLeerArchivo_Click(object sender, EventArgs e)
         {
             OpenFileDialog dialogoAbrir = new OpenFileDialog();
             dialogoAbrir.Filter = "Archivos de Excel (*.xls;*.xlsx)|*.xls;*.xlsx";
@@ -36,10 +39,35 @@ namespace ControlAsistencia.App
             try
             {
                 // Procesa el archivo seleccionado y acumula las novedades encontradas.
-                var inconsistencias = new List<Inconsistencia>();
+                inconsistenciasProcesadas = new List<Inconsistencia>();
                 var procesador = new ProcesadorAsistencia();
-                var registros = procesador.ProcesarArchivo(rutaEntrada, inconsistencias);
+                registrosProcesados = procesador.ProcesarArchivo(rutaEntrada, inconsistenciasProcesadas);
 
+                lblArchivo.Text = $"Archivo cargado: {Path.GetFileName(rutaEntrada)}";
+                lblEstado.Text = $"{registrosProcesados.Count} registros procesados. {inconsistenciasProcesadas.Count} novedades encontradas.";
+                btnGuardarResultados.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ocurrio un error al leer el archivo:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Exporta el resumen y el reporte de novedades generados previamente.
+        /// </summary>
+        /// <param name="sender">Control que dispara el evento.</param>
+        /// <param name="e">Argumentos del evento de clic.</param>
+        private void btnGuardarResultados_Click(object sender, EventArgs e)
+        {
+            if (registrosProcesados.Count == 0)
+            {
+                MessageBox.Show("Primero debes leer un archivo de marcaciones.", "Sin datos", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
                 // Solicita al usuario la ubicacion del archivo de resumen.
                 SaveFileDialog dialogoGuardarResumen = new SaveFileDialog();
                 dialogoGuardarResumen.Filter = "Archivo de Excel (*.xlsx)|*.xlsx";
@@ -64,14 +92,14 @@ namespace ControlAsistencia.App
 
                 // Genera los archivos finales en formato Excel.
                 var exportador = new ExportadorExcel();
-                exportador.ExportarResumen(registros, dialogoGuardarResumen.FileName);
-                exportador.ExportarNovedades(inconsistencias, dialogoGuardarNovedades.FileName);
+                exportador.ExportarResumen(registrosProcesados, dialogoGuardarResumen.FileName);
+                exportador.ExportarNovedades(inconsistenciasProcesadas, dialogoGuardarNovedades.FileName);
 
-                MessageBox.Show($"Listo! {registros.Count} registros procesados, {inconsistencias.Count} inconsistencias encontradas.");
+                MessageBox.Show($"Listo! Se guardaron {registrosProcesados.Count} registros y {inconsistenciasProcesadas.Count} novedades.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ocurrio un error al procesar el archivo:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Ocurrio un error al guardar los archivos:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
