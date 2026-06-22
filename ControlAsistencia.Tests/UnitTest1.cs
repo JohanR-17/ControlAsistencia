@@ -111,6 +111,7 @@ public class CalculadorAsistenciaTests
 
         var resultado = calculador.Procesar(dia, inconsistencias);
 
+        Assert.Equal(new TimeOnly(8, 0, 0), resultado.Entrada);
         Assert.Null(resultado.HorasTrabajadas);
         Assert.Single(inconsistencias);
         Assert.Equal(TipoInconsistencia.MarcacionesIncompletas, inconsistencias[0].Tipo);
@@ -141,6 +142,10 @@ public class CalculadorAsistenciaTests
 
         var resultado = calculador.Procesar(dia, inconsistencias);
 
+        Assert.Equal(new TimeOnly(5, 55, 0), resultado.Entrada);
+        Assert.Equal(new TimeOnly(12, 0, 0), resultado.InicioAlmuerzo);
+        Assert.Equal(new TimeOnly(12, 30, 0), resultado.FinAlmuerzo);
+        Assert.Equal(new TimeOnly(16, 0, 0), resultado.Salida);
         Assert.Null(resultado.HorasTrabajadas);
         Assert.Single(inconsistencias);
         Assert.Equal(TipoInconsistencia.CantidadDiferenteALaEsperada, inconsistencias[0].Tipo);

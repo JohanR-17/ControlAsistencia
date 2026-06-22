@@ -36,7 +36,7 @@ namespace ControlAsistencia.Core
                 string textoHoras = fila.GetCell(5).ToString();
                 foreach (string textoHora in textoHoras.Split(';'))
                 {
-                    if (TimeOnly.TryParse(textoHora, out TimeOnly hora))
+                    if (TimeOnly.TryParse(textoHora.Trim(), out TimeOnly hora))
                     {
                         dia.Marcas.Add(hora);
                     }

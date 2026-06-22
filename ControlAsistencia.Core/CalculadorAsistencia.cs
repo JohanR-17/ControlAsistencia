@@ -23,14 +23,12 @@ public class CalculadorAsistencia
             Fecha = dia.Fecha
         };
 
+        AsignarMarcasDisponibles(registro, marcasFiltradas);
+
         if (marcasFiltradas.Count == 4)
         {
             // Caso ideal: las cuatro marcaciones permiten identificar entrada,
             // salida y regreso de almuerzo, y salida final.
-            registro.Entrada = marcasFiltradas[0];
-            registro.InicioAlmuerzo = marcasFiltradas[1];
-            registro.FinAlmuerzo = marcasFiltradas[2];
-            registro.Salida = marcasFiltradas[3];
             registro.HorasTrabajadas = CalcularHoras(
                 marcasFiltradas[0], marcasFiltradas[1], marcasFiltradas[2], marcasFiltradas[3]);
         }
@@ -38,8 +36,6 @@ public class CalculadorAsistencia
         {
             // Si faltan marcas intermedias, se calcula con primera y ultima marca,
             // dejando la novedad para revision porque no se puede descontar almuerzo.
-            registro.Entrada = marcasFiltradas[0];
-            registro.Salida = marcasFiltradas[^1];
             registro.HorasTrabajadas = (registro.Salida.Value - registro.Entrada.Value).TotalHours;
 
             inconsistencias.Add(new Inconsistencia
@@ -49,6 +45,10 @@ public class CalculadorAsistencia
                 Tipo = TipoInconsistencia.MarcacionesIncompletas,
                 Detalle = $"Se encontraron {marcasFiltradas.Count} marcaciones; no se pudo identificar el almuerzo. Horas calculadas sin descontar almuerzo."
             });
+        }
+        else if (marcasFiltradas.Count == 0)
+        {
+            // La novedad ya se registro al intentar eliminar duplicados.
         }
         else if (marcasFiltradas.Count == 1)
         {
@@ -87,6 +87,19 @@ public class CalculadorAsistencia
     /// <returns>Lista de marcaciones sin duplicados cercanos.</returns>
     private List<TimeOnly> EliminarDuplicados(List<TimeOnly> marcas, string empleado, DateOnly fecha, List<Inconsistencia> inconsistencias)
     {
+        if (marcas.Count == 0)
+        {
+            inconsistencias.Add(new Inconsistencia
+            {
+                Empleado = empleado,
+                Fecha = fecha,
+                Tipo = TipoInconsistencia.MarcacionesIncompletas,
+                Detalle = "No se encontraron marcaciones validas para calcular la asistencia."
+            });
+
+            return new List<TimeOnly>();
+        }
+
         var resultado = new List<TimeOnly> { marcas[0] };
 
         for (int i = 1; i < marcas.Count; i++)
@@ -111,6 +124,37 @@ public class CalculadorAsistencia
         }
 
         return resultado;
+    }
+
+    /// <summary>
+    /// Copia en el resumen las marcas disponibles, incluso cuando el dia tenga inconsistencias.
+    /// </summary>
+    /// <param name="registro">Registro de asistencia que se va a exportar.</param>
+    /// <param name="marcas">Marcaciones validas leidas para el dia.</param>
+    private void AsignarMarcasDisponibles(RegistroAsistencia registro, List<TimeOnly> marcas)
+    {
+        if (marcas.Count == 0)
+        {
+            return;
+        }
+
+        registro.Entrada = marcas[0];
+
+        if (marcas.Count >= 2)
+        {
+            registro.Salida = marcas[^1];
+        }
+
+        if (marcas.Count >= 3)
+        {
+            registro.InicioAlmuerzo = marcas[1];
+        }
+
+        if (marcas.Count >= 4)
+        {
+            registro.FinAlmuerzo = marcas[2];
+            registro.Salida = marcas[^1];
+        }
     }
 
     /// <summary>
