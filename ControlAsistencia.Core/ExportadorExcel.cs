@@ -60,7 +60,7 @@ namespace ControlAsistencia.Core
                 AplicarEstiloFila(fila, estiloTexto, exceptoColumna: 6);
             }
 
-            DarFormatoHoja(hoja, 7);
+            DarFormatoHoja(hoja, 18, 14, 14, 18, 16, 14, 18);
 
             using var stream = File.Create(rutaSalida);
             libro.Write(stream);
@@ -98,7 +98,7 @@ namespace ControlAsistencia.Core
                 AplicarEstiloFila(fila, estiloTexto);
             }
 
-            DarFormatoHoja(hoja, 4);
+            DarFormatoHoja(hoja, 18, 14, 28, 70);
 
             using var stream = File.Create(rutaSalida);
             libro.Write(stream);
@@ -193,15 +193,14 @@ namespace ControlAsistencia.Core
         /// Ajusta columnas y congela el encabezado para que el archivo sea mas legible.
         /// </summary>
         /// <param name="hoja">Hoja Excel que se va a ajustar.</param>
-        /// <param name="cantidadColumnas">Cantidad de columnas usadas en el reporte.</param>
-        private void DarFormatoHoja(ISheet hoja, int cantidadColumnas)
+        /// <param name="anchosColumnas">Anchos de columnas medidos aproximadamente en caracteres.</param>
+        private void DarFormatoHoja(ISheet hoja, params int[] anchosColumnas)
         {
             hoja.CreateFreezePane(0, 1);
 
-            for (int i = 0; i < cantidadColumnas; i++)
+            for (int i = 0; i < anchosColumnas.Length; i++)
             {
-                hoja.AutoSizeColumn(i);
-                hoja.SetColumnWidth(i, Math.Min(hoja.GetColumnWidth(i) + 800, 12000));
+                hoja.SetColumnWidth(i, anchosColumnas[i] * 256);
             }
         }
     }
