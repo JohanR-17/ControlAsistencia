@@ -80,4 +80,50 @@ public class CalculadorAsistenciaTests
         Assert.Single(inconsistencias);
         Assert.Equal(TipoInconsistencia.MarcacionesIncompletas, inconsistencias[0].Tipo);
     }
+
+    [Fact]
+    public void Procesar_ConUnaSolaMarca_NoCalculaHorasYReportaInconsistencia()
+    {
+        var dia = new MarcacionesDia
+        {
+            Empleado = "EMP004",
+            Fecha = new DateOnly(2026, 6, 11),
+            Marcas = new List<TimeOnly> { new TimeOnly(8, 0, 0) }
+        };
+        var inconsistencias = new List<Inconsistencia>();
+        var calculador = new CalculadorAsistencia();
+
+        var resultado = calculador.Procesar(dia, inconsistencias);
+
+        Assert.Null(resultado.HorasTrabajadas);
+        Assert.Single(inconsistencias);
+        Assert.Equal(TipoInconsistencia.MarcacionesIncompletas, inconsistencias[0].Tipo);
+    }
+
+    [Fact]
+    public void Procesar_ConSeisMarcasSeparadas_NoCalculaHorasYReportaCantidadDiferente()
+    {
+        var dia = new MarcacionesDia
+        {
+            Empleado = "EMP005",
+            Fecha = new DateOnly(2026, 6, 12),
+            Marcas = new List<TimeOnly>
+            {
+                new TimeOnly(5, 55, 0),
+                new TimeOnly(12, 0, 0),
+                new TimeOnly(12, 30, 0),
+                new TimeOnly(13, 0, 0),
+                new TimeOnly(13, 30, 0),
+                new TimeOnly(16, 0, 0)
+            }
+        };
+        var inconsistencias = new List<Inconsistencia>();
+        var calculador = new CalculadorAsistencia();
+
+        var resultado = calculador.Procesar(dia, inconsistencias);
+
+        Assert.Null(resultado.HorasTrabajadas);
+        Assert.Single(inconsistencias);
+        Assert.Equal(TipoInconsistencia.CantidadDiferenteALaEsperada, inconsistencias[0].Tipo);
+    }
 }
